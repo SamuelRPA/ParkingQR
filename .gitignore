@@ -1,0 +1,62 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencias
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Variables de entorno (¡CRÍTICO PARA SEGURIDAD!)
+.env
+.env.*
+!.env.example
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Archivos de compilación de la app final (cuando la exportes)
+*.apk
+*.aab
+*.ipa
+
+# Metro
+.metro-health-check*
+
+# logs y debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# Sistemas Operativos (macOS y Windows)
+.DS_Store
+*.pem
+Thumbs.db
+
+# typescript
+*.tsbuildinfo
+
+# Plantilla de Expo que no necesitas
+app-example/
+
+# carpetas nativas generadas
+/ios
+/android
+
+# Configuraciones de Editores de Código (VS Code, IntelliJ, etc)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
