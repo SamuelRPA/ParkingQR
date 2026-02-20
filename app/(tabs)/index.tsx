@@ -1,81 +1,99 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, Button, Alert, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, Button, Alert, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
-// 1. Tipos de TypeScript para nuestra estructura de datos
 type EstadoParqueo = 'libre' | 'ocupado' | 'mantenimiento';
+interface Parqueo { idQR: string; nombre: string; estado: EstadoParqueo; }
 
-interface Parqueo {
-  id: string;
-  nombre: string;
-  estado: EstadoParqueo;
-}
+// 🔴🔴🔴 CAMBIA ESTA IP POR LA IPv4 DE TU COMPUTADORA 🔴🔴🔴
+const API_URL = 'http://192.168.0.36:3000/api/parqueos'; 
 
 export default function InicioScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [currentView, setCurrentView] = useState<'dashboard' | 'scanner'>('dashboard');
   const [scanned, setScanned] = useState(false);
+  const [parqueos, setParqueos] = useState<Parqueo[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // 2. Estado inicial (Nuestra base de datos simulada)
-  const [parqueos, setParqueos] = useState<Parqueo[]>([
-    { id: 'QR-A1', nombre: 'Parqueo A1', estado: 'libre' },
-    { id: 'QR-A2', nombre: 'Parqueo A2', estado: 'ocupado' },
-    { id: 'QR-A3', nombre: 'Parqueo A3', estado: 'mantenimiento' },
-    { id: 'QR-B1', nombre: 'Parqueo B1', estado: 'libre' },
-  ]);
+  // 1. CARGAR DATOS DESDE MONGODB
+  const cargarParqueos = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setParqueos(data);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "No se pudo conectar a la base de datos.");
+    }
+    setLoading(false);
+  };
+
+  // Cargar al iniciar y cada vez que entramos al dashboard
+  useEffect(() => {
+    if (currentView === 'dashboard') {
+      cargarParqueos();
+    }
+  }, [currentView]);
 
   if (!permission) return <View />;
   if (!permission.granted) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={{ textAlign: 'center', marginBottom: 10 }}>Necesitamos permiso para usar la cámara</Text>
+        <Text style={{ textAlign: 'center', marginBottom: 10 }}>Necesitamos permiso para la cámara</Text>
         <Button onPress={requestPermission} title="Otorgar permiso" />
       </View>
     );
   }
 
-  // 3. Lógica del Escáner
+  // 2. LÓGICA DEL ESCÁNER (Conectada a la BD)
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     setScanned(true);
 
-    const parqueoEncontrado = parqueos.find(p => p.id === data);
+    const parqueoEncontrado = parqueos.find(p => p.idQR === data);
 
     if (!parqueoEncontrado) {
-      Alert.alert("Error", "Este QR no pertenece a un parqueo registrado.", [
-        { text: "OK", onPress: () => setScanned(false) }
-      ]);
+      Alert.alert("Error", "Este QR no existe en la Base de Datos.", [{ text: "OK", onPress: () => setScanned(false) }]);
       return;
     }
 
     if (parqueoEncontrado.estado === 'mantenimiento') {
-      Alert.alert("Mantenimiento", `El ${parqueoEncontrado.nombre} está deshabilitado.`, [
-        { text: "Entendido", onPress: () => setScanned(false) }
-      ]);
+      Alert.alert("Mantenimiento", `El ${parqueoEncontrado.nombre} está deshabilitado.`, [{ text: "OK", onPress: () => setScanned(false) }]);
     } else if (parqueoEncontrado.estado === 'libre') {
       Alert.alert("Parqueo Libre", `¿Deseas ocupar el ${parqueoEncontrado.nombre}?`, [
         { text: "Cancelar", style: "cancel", onPress: () => setScanned(false) },
-        { text: "Ocupar", onPress: () => cambiarEstadoParqueo(parqueoEncontrado.id, 'ocupado') }
+        { text: "Ocupar", onPress: () => actualizarEstadoBD(parqueoEncontrado.idQR, 'ocupado') }
       ]);
     } else if (parqueoEncontrado.estado === 'ocupado') {
       Alert.alert("Parqueo Ocupado", `¿Deseas liberar el ${parqueoEncontrado.nombre}?`, [
         { text: "Cancelar", style: "cancel", onPress: () => setScanned(false) },
-        { text: "Liberar", onPress: () => cambiarEstadoParqueo(parqueoEncontrado.id, 'libre') }
+        { text: "Liberar", onPress: () => actualizarEstadoBD(parqueoEncontrado.idQR, 'libre') }
       ]);
     }
   };
 
-  const cambiarEstadoParqueo = (id: string, nuevoEstado: EstadoParqueo) => {
-    setParqueos(prev => prev.map(p => p.id === id ? { ...p, estado: nuevoEstado } : p));
-    setScanned(false);
-    setCurrentView('dashboard');
-    Alert.alert("Éxito", `El estado se actualizó a: ${nuevoEstado.toUpperCase()}`);
+  // 3. ACTUALIZAR ESTADO EN MONGODB
+  const actualizarEstadoBD = async (idQR: string, nuevoEstado: EstadoParqueo) => {
+    try {
+      await fetch(`${API_URL}/${idQR}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+      Alert.alert("Éxito", `Registrado en la Base de Datos como: ${nuevoEstado.toUpperCase()}`);
+      setScanned(false);
+      setCurrentView('dashboard'); // Vuelve al inicio y se recarga automáticamente
+    } catch (error) {
+      Alert.alert("Error", "No se pudo actualizar en la base de datos.");
+      setScanned(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => setCurrentView('dashboard')}>
-          <Text style={styles.navText}>Monitor</Text>
+          <Text style={styles.navText}>Monitor BD</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={() => setCurrentView('scanner')}>
           <Text style={styles.navText}>Escanear QR</Text>
@@ -84,23 +102,29 @@ export default function InicioScreen() {
 
       {currentView === 'dashboard' && (
         <View style={styles.content}>
-          <Text style={styles.title}>Estado de Parqueos</Text>
-          <FlatList
-            data={parqueos}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => {
-              let colorFondo = '#4CAF50'; 
-              if (item.estado === 'ocupado') colorFondo = '#F44336'; 
-              if (item.estado === 'mantenimiento') colorFondo = '#9E9E9E'; 
-
-              return (
-                <View style={[styles.card, { backgroundColor: colorFondo }]}>
-                  <Text style={styles.cardTitle}>{item.nombre}</Text>
-                  <Text style={styles.cardStatus}>Estado: {item.estado.toUpperCase()}</Text>
-                </View>
-              );
-            }}
-          />
+          <Text style={styles.title}>Estado en Vivo</Text>
+          <Button title="↻ Actualizar" onPress={cargarParqueos} />
+          
+          {loading ? (
+            <ActivityIndicator size="large" color="#0a7ea4" style={{marginTop: 20}} />
+          ) : (
+            <FlatList
+              data={parqueos}
+              keyExtractor={item => item.idQR}
+              style={{marginTop: 15}}
+              renderItem={({ item }) => {
+                let colorFondo = '#4CAF50'; 
+                if (item.estado === 'ocupado') colorFondo = '#F44336'; 
+                if (item.estado === 'mantenimiento') colorFondo = '#9E9E9E'; 
+                return (
+                  <View style={[styles.card, { backgroundColor: colorFondo }]}>
+                    <Text style={styles.cardTitle}>{item.nombre}</Text>
+                    <Text style={styles.cardStatus}>Estado: {item.estado.toUpperCase()}</Text>
+                  </View>
+                );
+              }}
+            />
+          )}
         </View>
       )}
 
@@ -129,7 +153,7 @@ const styles = StyleSheet.create({
   navBtn: { padding: 10 },
   navText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
   content: { flex: 1, padding: 20 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#333' },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 10, textAlign: 'center', color: '#333' },
   card: { padding: 20, borderRadius: 10, marginBottom: 15, elevation: 3 },
   cardTitle: { fontSize: 18, color: 'white', fontWeight: 'bold' },
   cardStatus: { fontSize: 14, color: 'white', marginTop: 5 },
