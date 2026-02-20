@@ -6,7 +6,7 @@ type EstadoParqueo = 'libre' | 'ocupado' | 'mantenimiento';
 interface Parqueo { idQR: string; nombre: string; estado: EstadoParqueo; }
 
 // 🔴🔴🔴 CAMBIA ESTA IP POR LA IPv4 DE TU COMPUTADORA 🔴🔴🔴
-const API_URL = 'http://192.168.0.36:3000/api/parqueos'; 
+const API_URL = 'https://parkingqrback.onrender.com'; 
 
 export default function InicioScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -19,7 +19,7 @@ export default function InicioScreen() {
   const cargarParqueos = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(`${API_URL}/api/parqueos`);
       const data = await res.json();
       setParqueos(data);
     } catch (error) {
@@ -75,7 +75,7 @@ export default function InicioScreen() {
   // 3. ACTUALIZAR ESTADO EN MONGODB
   const actualizarEstadoBD = async (idQR: string, nuevoEstado: EstadoParqueo) => {
     try {
-      await fetch(`${API_URL}/${idQR}`, {
+      await fetch(`${API_URL}/api/parqueos/${idQR}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado: nuevoEstado })
