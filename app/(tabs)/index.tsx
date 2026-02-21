@@ -6,7 +6,7 @@ type EstadoParqueo = 'libre' | 'ocupado' | 'mantenimiento';
 interface Parqueo { idQR: string; nombre: string; estado: EstadoParqueo; }
 
 // 🔴🔴🔴 CAMBIA ESTA IP POR LA IPv4 DE TU COMPUTADORA 🔴🔴🔴
-const API_URL = 'http://192.168.0.36:3000/api/parqueos'; 
+const API_URL = 'http://10.49.232.155:3000/api/parqueos'; 
 
 export default function InicioScreen() {
   const [permission, requestPermission] = useCameraPermissions();
