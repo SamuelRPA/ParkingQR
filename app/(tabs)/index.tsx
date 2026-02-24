@@ -14,7 +14,6 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 type EstadoParqueo = 'libre' | 'ocupado' | 'mantenimiento';
 interface Parqueo { idQR: string; nombre: string; estado: EstadoParqueo; }
 
-// 🔴🔴🔴 CAMBIA ESTA IP POR LA IPv4 DE TU COMPUTADORA 🔴🔴🔴
 const API_URL = 'https://parkingqrback.onrender.com';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -142,26 +141,6 @@ export default function InicioScreen() {
         <Text style={styles.headerSubtitle}>Sistema de Estacionamiento</Text>
       </View>
 
-      {/* Nav tabs */}
-      <View style={styles.navBar}>
-        <TouchableOpacity
-          style={[styles.navBtn, currentView === 'dashboard' && styles.navBtnActive]}
-          onPress={() => setCurrentView('dashboard')}
-        >
-          <Text style={[styles.navText, currentView === 'dashboard' && styles.navTextActive]}>
-            📊 Monitor
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.navBtn, currentView === 'scanner' && styles.navBtnActive]}
-          onPress={() => setCurrentView('scanner')}
-        >
-          <Text style={[styles.navText, currentView === 'scanner' && styles.navTextActive]}>
-            📷 Escanear QR
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Dashboard */}
       {currentView === 'dashboard' && (
         <View style={styles.content}>
@@ -251,6 +230,27 @@ export default function InicioScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Nav tabs (AHORA EN LA PARTE INFERIOR) */}
+      <View style={styles.navBar}>
+        <TouchableOpacity
+          style={[styles.navBtn, currentView === 'dashboard' && styles.navBtnActive]}
+          onPress={() => setCurrentView('dashboard')}
+        >
+          <Text style={[styles.navText, currentView === 'dashboard' && styles.navTextActive]}>
+            📊 Monitor
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.navBtn, currentView === 'scanner' && styles.navBtnActive]}
+          onPress={() => setCurrentView('scanner')}
+        >
+          <Text style={[styles.navText, currentView === 'scanner' && styles.navTextActive]}>
+            📷 Escanear QR
+          </Text>
+        </TouchableOpacity>
+      </View>
+
     </View>
   );
 }
@@ -267,8 +267,21 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 26, fontWeight: 'bold', color: '#fff' },
   headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
 
-  // Nav
-  navBar: { flexDirection: 'row', backgroundColor: '#fff', marginHorizontal: 16, marginTop: 10, borderRadius: 14, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 6, overflow: 'hidden' },
+  // Nav (ESTILO FLOTANTE ACTUALIZADO)
+  navBar: { 
+    flexDirection: 'row', 
+    backgroundColor: '#fff', 
+    marginHorizontal: 20, 
+    marginBottom: 20, 
+    marginTop: 0,
+    borderRadius: 20, 
+    elevation: 8, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.2, 
+    shadowRadius: 8, 
+    overflow: 'hidden' 
+  },
   navBtn: { flex: 1, paddingVertical: 14, alignItems: 'center' },
   navBtnActive: { borderBottomWidth: 3, borderBottomColor: '#0a7ea4' },
   navText: { fontSize: 15, color: '#999', fontWeight: '600' },
